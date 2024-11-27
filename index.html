@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automatisation Connexion et Prédictions Aviator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            margin: 20px;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            max-width: 400px;
+            margin-top: 50px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 24px;
+            color: #333;
+        }
+        #multiplicatorDisplay, #predictionDisplay {
+            font-size: 20px;
+            margin: 10px;
+            padding: 10px;
+            background-color: #f4f4f9;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+    </style>
+    <script>
+        const lastMultipliers = [];
+        let socket;
+
+        // Fonction pour remplir les champs et soumettre le formulaire
+        function attemptLogin() {
+            console.log("Tentative de remplissage des champs...");
+            const usernameField = document.querySelector('input[name="username"]');
+            const passwordField = document.querySelector('input[name="password"]');
+            const loginForm = document.querySelector('form');
+
+            if (usernameField && passwordField && loginForm) {
+                usernameField.value = "383061076"; // Remplacez par votre identifiant
+                passwordField.value = "Rahitif!3006"; // Remplacez par votre mot de passe
+                console.log("Champs remplis. Envoi du formulaire...");
+                loginForm.submit(); // Soumettre le formulaire
+            } else {
+                console.error("Éléments du formulaire introuvables. Vérification dans 2 secondes...");
+                setTimeout(attemptLogin, 2000); // Réessayer après 2 secondes
+            }
+        }
+
+        // Fonction pour cliquer sur le bouton "OK"
+        function clickOkButton() {
+            console.log("Recherche du bouton 'OK'...");
+            const okButton = document.querySelector('button.button.validate');
+            if (okButton) {
+                console.log("Bouton 'OK' trouvé. Clique...");
+                okButton.click();
+            } else {
+                console.error("Bouton 'OK' introuvable. Réessayer dans 2 secondes...");
+                setTimeout(clickOkButton, 2000); // Réessayer après 2 secondes
+            }
+        }
+
+        // Fonction pour démarrer la connexion WebSocket et obtenir les multiplicateurs
+        function startWebSocket() {
+            console.log("Tentative de connexion au WebSocket...");
+            socket = new WebSocket('wss://push-v3.everymatrix.com/gameWindow');
+
+            socket.onopen = () => {
+                console.log("Connexion WebSocket établie");
+            };
+
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                console.log("Données reçues :", data);
+
+                if (data.gameData) {
+                    const multiplicator = data.gameData.multiplicator;
+                    if (multiplicator !== undefined) {
+                        lastMultipliers.push(multiplicator);
+                        if (lastMultipliers.length > 5) {
+                            lastMultipliers.shift();
+                        }
+                        document.getElementById('multiplicatorDisplay').innerText = multiplicator.toFixed(2);
+                        document.getElementById('predictionDisplay').innerText = 'Prédiction : ' + calculatePrediction().toFixed(2);
+                    }
+                }
+            };
+
+            socket.onerror = (error) => {
+                console.error("Erreur WebSocket :", error);
+            };
+
+            socket.onclose = () => {
+                console.log("Connexion WebSocket fermée.");
+            };
+        }
+
+        // Fonction pour calculer la prédiction basée sur les derniers multiplicateurs
+        function calculatePrediction() {
+            if (lastMultipliers.length === 0) return 0;
+
+            const sum = lastMultipliers.reduce((acc, val) => acc + val, 0);
+            return sum / lastMultipliers.length;
+        }
+
+        // Fonction principale pour gérer la redirection et les actions
+        function mainProcess() {
+            const currentUrl = window.location.href;
+
+            if (currentUrl.includes("bet261.mg/sports")) {
+                console.log("Sur la page de connexion. Tentative de connexion...");
+                attemptLogin();
+            } else if (currentUrl.includes("bet261.mg/instant-games/em/aviator-spribe")) {
+                console.log("Sur la page de jeu. Clique sur le bouton 'OK'...");
+                clickOkButton();
+                startWebSocket();
+            } else {
+                console.log("Page inattendue :", currentUrl);
+            }
+        }
+
+        // Lancer le processus principal toutes les 2 secondes
+        setInterval(mainProcess, 2000);
+    </script>
+</head>
+<body>
+    <h1>Connexion automatique à Aviator</h1>
+    <p>Le processus de connexion sera lancé...</p>
+    <div class="container">
+        <h2>Multiplicateur actuel</h2>
+        <div id="multiplicatorDisplay">En attente...</div>
+        <h2>Prédiction</h2>
+        <div id="predictionDisplay">Prédiction : En attente...</div>
+    </div>
+</body>
+</html>
